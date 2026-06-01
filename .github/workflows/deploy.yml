@@ -8,38 +8,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Create .vercel project config
-        run: |
-          mkdir -p .vercel
-          cat > .vercel/project.json << 'JSON'
-          {"projectId":"","orgId":""}
-          JSON
-
-      - name: Deploy to Vercel (creates project on first run)
+      - name: Deploy and capture URL
         id: deploy
         run: |
-          vercel --yes \
-            --prod \
+          OUTPUT=$(vercel --yes --prod \
             --name=pm-tracker-web \
-            --build-env AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" \
-            --build-env AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" \
-            --build-env AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" \
-            --build-env SESSION_SECRET="${{ secrets.SESSION_SECRET }}" \
             --env AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" \
             --env AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" \
             --env AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" \
             --env SESSION_SECRET="${{ secrets.SESSION_SECRET }}" \
-            --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | tee deploy.log
-          URL=$(grep -oP 'https://[^\s]+\.vercel\.app' deploy.log | tail -1)
+            --token=${{ secrets.VERCEL_TOKEN }} 2>&1)
+          echo "$OUTPUT"
+          URL=$(echo "$OUTPUT" | grep -oP 'https://[a-zA-Z0-9._-]+\.vercel\.app' | tail -1)
+          if [ -z "$URL" ]; then
+            URL=$(echo "$OUTPUT" | grep -oP 'https://[a-zA-Z0-9._/-]+' | tail -1)
+          fi
+          echo "DEPLOYMENT_URL=$URL" >> $GITHUB_ENV
           echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "Deployed: $URL"
+          echo "::notice title=Live URL::$URL"
+
+      - name: Update NEXTAUTH_URL env var
+        run: |
+          echo "${{ env.DEPLOYMENT_URL }}" | vercel env add NEXTAUTH_URL production \
+            --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
+          echo "App is live at: ${{ env.DEPLOYMENT_URL }}"
+
+      - name: Write URL to repo file
+        run: |
+          echo "${{ env.DEPLOYMENT_URL }}" > DEPLOYMENT_URL.txt
+          git config user.email "deploy-bot@github-actions.com"
+          git config user.name "Deploy Bot"
+          git add DEPLOYMENT_URL.txt
+          git diff --staged --quiet || git commit -m "chore: save deployment URL"
+          git push || true
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
