@@ -8,44 +8,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        id: vercel-deploy
         with:
-          node-version: '18'
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-args: '--prod'
+          working-directory: ./
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-project-name: pm-tracker-web
 
-      - name: Deploy and capture URL
-        id: deploy
+      - name: Save deployment URL
         run: |
-          OUTPUT=$(vercel --yes --prod \
-            --name=pm-tracker-web \
-            --env AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" \
-            --env AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" \
-            --env AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" \
-            --env SESSION_SECRET="${{ secrets.SESSION_SECRET }}" \
-            --token=${{ secrets.VERCEL_TOKEN }} 2>&1)
-          echo "$OUTPUT"
-          URL=$(echo "$OUTPUT" | grep -oP 'https://[a-zA-Z0-9._-]+\.vercel\.app' | tail -1)
-          if [ -z "$URL" ]; then
-            URL=$(echo "$OUTPUT" | grep -oP 'https://[a-zA-Z0-9._/-]+' | tail -1)
-          fi
-          echo "DEPLOYMENT_URL=$URL" >> $GITHUB_ENV
-          echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "::notice title=Live URL::$URL"
-
-      - name: Update NEXTAUTH_URL env var
-        run: |
-          echo "${{ env.DEPLOYMENT_URL }}" | vercel env add NEXTAUTH_URL production \
-            --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
-          echo "App is live at: ${{ env.DEPLOYMENT_URL }}"
-
-      - name: Write URL to repo file
-        run: |
-          echo "${{ env.DEPLOYMENT_URL }}" > DEPLOYMENT_URL.txt
-          git config user.email "deploy-bot@github-actions.com"
+          echo "${{ steps.vercel-deploy.outputs.preview-url }}" > DEPLOYMENT_URL.txt
+          echo "Live at: ${{ steps.vercel-deploy.outputs.preview-url }}"
+          git config user.email "bot@github-actions.com"
           git config user.name "Deploy Bot"
           git add DEPLOYMENT_URL.txt
-          git diff --staged --quiet || git commit -m "chore: save deployment URL"
+          git diff --staged --quiet || git commit -m "save deployment url"
           git push || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
