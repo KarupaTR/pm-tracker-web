@@ -6,27 +6,40 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
+
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
-      - name: Set Vercel env vars
+
+      - name: Create .vercel project config
         run: |
-          echo "${{ secrets.AZURE_CLIENT_ID }}"      | vercel env add AZURE_CLIENT_ID production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
-          echo "${{ secrets.AZURE_TENANT_ID }}"      | vercel env add AZURE_TENANT_ID production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
-          echo "${{ secrets.AZURE_CLIENT_SECRET }}"  | vercel env add AZURE_CLIENT_SECRET production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
-          echo "${{ secrets.SESSION_SECRET }}"       | vercel env add SESSION_SECRET production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
-      - name: Deploy
+          mkdir -p .vercel
+          cat > .vercel/project.json << 'JSON'
+          {"projectId":"","orgId":""}
+          JSON
+
+      - name: Deploy to Vercel (creates project on first run)
+        id: deploy
         run: |
-          URL=$(vercel --yes --prod --token=${{ secrets.VERCEL_TOKEN }})
-          echo "Live URL: $URL"
-          echo "DEPLOYMENT_URL=$URL" >> $GITHUB_ENV
-      - name: Set NEXTAUTH_URL
-        run: |
-          echo "$DEPLOYMENT_URL" | vercel env add NEXTAUTH_URL production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
-          vercel --yes --prod --token=${{ secrets.VERCEL_TOKEN }} 2>/dev/null || true
+          vercel --yes \
+            --prod \
+            --name=pm-tracker-web \
+            --build-env AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" \
+            --build-env AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" \
+            --build-env AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" \
+            --build-env SESSION_SECRET="${{ secrets.SESSION_SECRET }}" \
+            --env AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" \
+            --env AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" \
+            --env AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" \
+            --env SESSION_SECRET="${{ secrets.SESSION_SECRET }}" \
+            --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | tee deploy.log
+          URL=$(grep -oP 'https://[^\s]+\.vercel\.app' deploy.log | tail -1)
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed: $URL"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
