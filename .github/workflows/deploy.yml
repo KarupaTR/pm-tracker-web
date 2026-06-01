@@ -1,0 +1,32 @@
+name: Deploy to Vercel
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+      - name: Set Vercel env vars
+        run: |
+          echo "${{ secrets.AZURE_CLIENT_ID }}"      | vercel env add AZURE_CLIENT_ID production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
+          echo "${{ secrets.AZURE_TENANT_ID }}"      | vercel env add AZURE_TENANT_ID production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
+          echo "${{ secrets.AZURE_CLIENT_SECRET }}"  | vercel env add AZURE_CLIENT_SECRET production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
+          echo "${{ secrets.SESSION_SECRET }}"       | vercel env add SESSION_SECRET production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
+      - name: Deploy
+        run: |
+          URL=$(vercel --yes --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Live URL: $URL"
+          echo "DEPLOYMENT_URL=$URL" >> $GITHUB_ENV
+      - name: Set NEXTAUTH_URL
+        run: |
+          echo "$DEPLOYMENT_URL" | vercel env add NEXTAUTH_URL production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
+          vercel --yes --prod --token=${{ secrets.VERCEL_TOKEN }} 2>/dev/null || true
