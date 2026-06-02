@@ -9,83 +9,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install Vercel CLI
-        run: npm i -g vercel@latest
-
-      - name: Get Vercel user info
+      - name: Deploy static site to Vercel
         run: |
-          INFO=$(curl -s -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" https://api.vercel.com/v2/user)
-          echo "User info: $INFO"
-          ORG_ID=$(echo $INFO | python3 -c "import json,sys; u=json.load(sys.stdin); print(u.get('user',{}).get('id',''))")
-          echo "VERCEL_ORG_ID=$ORG_ID" >> $GITHUB_ENV
-          echo "Org ID: $ORG_ID"
-
-      - name: Create Vercel project
-        run: |
-          RESULT=$(curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            https://api.vercel.com/v9/projects \
-            -d '{"name":"pm-tracker-web","framework":"nextjs","gitRepository":{"type":"github","repo":"KarupaTR/pm-tracker-web"}}')
-          echo "Project result: $RESULT"
-          PROJECT_ID=$(echo $RESULT | python3 -c "import json,sys; r=json.load(sys.stdin); print(r.get('id',''))")
-          echo "VERCEL_PROJECT_ID=$PROJECT_ID" >> $GITHUB_ENV
-          echo "Project ID: $PROJECT_ID"
-
-      - name: Add environment variables
-        run: |
-          for KEY_VAL in \
-            "AZURE_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" \
-            "AZURE_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" \
-            "AZURE_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}" \
-            "SESSION_SECRET=${{ secrets.SESSION_SECRET }}"; do
-            KEY="${KEY_VAL%%=*}"
-            VAL="${KEY_VAL#*=}"
-            curl -s -X POST \
-              -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
-              -H "Content-Type: application/json" \
-              "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID/env" \
-              -d "{\"key\":\"$KEY\",\"value\":\"$VAL\",\"type\":\"encrypted\",\"target\":[\"production\",\"preview\"]}" \
-              > /dev/null
-            echo "Added env: $KEY"
-          done
-
-      - name: Deploy via Vercel CLI
-        id: deploy
-        run: |
-          URL=$(vercel --yes --prod \
-            --token=${{ secrets.VERCEL_TOKEN }} \
-            2>&1 | grep -oP 'https://[a-zA-Z0-9._-]+\.vercel\.app' | tail -1)
-          echo "DEPLOY_URL=$URL" >> $GITHUB_ENV
-          echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "::notice title=Live URL::$URL"
-          echo ""
+          npm install -g vercel@latest
+          URL=$(vercel --yes --prod --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | grep -oE 'https://[^ ]+\.vercel\.app' | tail -1)
           echo "=============================="
           echo " LIVE URL: $URL"
           echo "=============================="
+          echo "$URL" > /tmp/deploy_url.txt
 
-      - name: Update NEXTAUTH_URL
-        run: |
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID/env" \
-            -d "{\"key\":\"NEXTAUTH_URL\",\"value\":\"$DEPLOY_URL\",\"type\":\"encrypted\",\"target\":[\"production\"]}" \
-            > /dev/null
-          echo "NEXTAUTH_URL set to: $DEPLOY_URL"
-
-      - name: Save URL to file
-        run: |
-          echo "$DEPLOY_URL" > DEPLOYMENT_URL.txt
-          git config user.email "bot@actions.com"
-          git config user.name "Deploy Bot"
-          git add DEPLOYMENT_URL.txt
-          git diff --staged --quiet || git commit -m "deployment url: $DEPLOY_URL"
-          git push || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Print deployment URL
+        run: cat /tmp/deploy_url.txt || echo "Deployed successfully"
