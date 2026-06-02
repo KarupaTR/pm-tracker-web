@@ -1,6 +1,15 @@
 {
-  "crons": [
-    { "path": "/api/cron/sync", "schedule": "*/30 * * * *" },
-    { "path": "/api/cron/notify", "schedule": "0 9 * * *" }
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
