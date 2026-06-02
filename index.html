@@ -4,107 +4,100 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PM Task Tracker</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-graph-client/3.0.7/graph-js-sdk.js"></script>
-<script>
-// MSAL browser loaded below via ESM
-</script>
+<!-- MSAL UMD build — no ES module, works in all browsers -->
+<script src="https://unpkg.com/@azure/msal-browser@3.26.1/dist/msal-browser.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#fff;--bg2:#f5f5f4;--bg3:#efefed;--text:#1a1a18;--text2:#6b6b67;--border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.18);--r:8px;--rl:12px;
---blue-bg:#e6f1fb;--blue:#185fa5;--blue-b:#85b7eb;
---amber-bg:#faeeda;--amber:#854f0b;--amber-b:#ef9f27;
---green-bg:#eaf3de;--green:#3b6d11;--green-b:#97c459;
---red-bg:#fcebeb;--red:#a32d2d;--red-b:#f09595;
---purple-bg:#eeedfe;--purple:#534ab7;--gray-bg:#f1efe8;--gray:#5f5e5a}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;min-height:100vh}
+:root{--bg:#fff;--bg2:#f5f5f4;--bg3:#efefed;--tx:#1a1a18;--tx2:#6b6b67;--bd:rgba(0,0,0,.1);--bd2:rgba(0,0,0,.18);--r:8px;--rl:12px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--tx);font-size:14px;min-height:100vh}
 .app{max-width:980px;margin:0 auto;padding:1.5rem 1rem}
 .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px}
 h1{font-size:20px;font-weight:600}
-.sub{font-size:12px;color:var(--text2);margin-top:2px}
+.sub{font-size:12px;color:var(--tx2);margin-top:2px}
 .acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:1.25rem}
-.metric{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
-.ml{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.met{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px}
+.ml{font-size:11px;color:var(--tx2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
 .mv{font-size:22px;font-weight:600}
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
-.tab{padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text2);border:none;background:none;border-bottom:2px solid transparent;font-family:inherit}
-.tab.on{color:var(--text);border-bottom-color:var(--text);font-weight:500}
-.btn{height:34px;padding:0 14px;font-size:13px;font-weight:500;border-radius:var(--r);cursor:pointer;white-space:nowrap;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-family:inherit}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);margin-bottom:1.25rem}
+.tab{padding:8px 16px;font-size:13px;cursor:pointer;color:var(--tx2);border:none;background:none;border-bottom:2px solid transparent;font-family:inherit}
+.tab.on{color:var(--tx);border-bottom-color:var(--tx);font-weight:500}
+.btn{height:34px;padding:0 14px;font-size:13px;font-weight:500;border-radius:var(--r);cursor:pointer;white-space:nowrap;border:1px solid var(--bd2);background:var(--bg);color:var(--tx);font-family:inherit}
 .btn:hover{background:var(--bg2)}.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn.pri{background:var(--text);color:var(--bg);border-color:var(--text)}
-.btn.blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-b)}
-.btn.green{background:var(--green-bg);color:var(--green);border-color:var(--green-b)}
-.btn.amber{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-b)}
-.btn.red{background:var(--red-bg);color:var(--red);border-color:var(--red-b)}
-.btn.sm{height:28px;padding:0 10px;font-size:12px}
-.btn.ico{width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.pri{background:#1a1a18!important;color:#fff!important;border-color:#1a1a18!important}
+.blue{background:#e6f1fb;color:#185fa5;border-color:#85b7eb}
+.amber{background:#faeeda;color:#854f0b;border-color:#ef9f27}
+.green{background:#eaf3de;color:#3b6d11;border-color:#97c459}
+.redd{background:#fcebeb;color:#a32d2d;border-color:#f09595}
+.sm{height:28px;padding:0 10px;font-size:12px}
+.ico{width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .abar{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
-.abar input,.abar select{height:34px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px}
+.abar input,.abar select{height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--bg);color:var(--tx);font-family:inherit;font-size:13px}
 .tlist{display:flex;flex-direction:column;gap:6px}
-.tc{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:start}
-.tc:hover{border-color:var(--border2)}
-.chk{width:18px;height:18px;border:1.5px solid var(--border2);border-radius:4px;cursor:pointer;flex-shrink:0;margin-top:1px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:transparent}
-.chk.done{background:#639922;border-color:#639922;color:#fff}
+.tc{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);padding:12px 14px;display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:start}
+.tc:hover{border-color:var(--bd2)}
+.chk{width:18px;height:18px;border:1.5px solid var(--bd2);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:transparent;flex-shrink:0;margin-top:2px}
+.chkd{background:#639922;border-color:#639922;color:#fff}
 .tmeta{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center}
 .bdg{font-size:11px;padding:2px 8px;border-radius:100px;font-weight:500;white-space:nowrap}
 .tact{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start}
-.tact select,.tact input[type=date]{font-size:12px;padding:2px 6px;height:28px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;cursor:pointer}
-.oc{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;margin-bottom:8px}
+.tact select,.tact input[type=date]{font-size:12px;padding:2px 6px;height:28px;border:1px solid var(--bd);border-radius:var(--r);background:var(--bg);color:var(--tx);font-family:inherit;cursor:pointer}
+.oc{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);padding:14px 16px;margin-bottom:8px}
 .oh{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
-.oi{font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.oi{font-size:13px;padding:6px 0;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;gap:8px}
 .oi:last-child{border-bottom:none}
-.mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200}
-.modal{background:var(--bg);border-radius:var(--rl);padding:1.5rem;width:480px;max-width:95vw;border:1px solid var(--border2);max-height:90vh;overflow-y:auto}
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;display:none}
+.modal{background:var(--bg);border-radius:var(--rl);padding:1.5rem;width:480px;max-width:95vw;border:1px solid var(--bd2);max-height:90vh;overflow-y:auto}
 .modal h2{font-size:16px;font-weight:600;margin-bottom:1rem}
 .frow{margin-bottom:12px}
-.frow label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
-.frow input,.frow select,.frow textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px}
-.frow input:focus,.frow select:focus{outline:none;border-color:var(--blue-b);box-shadow:0 0 0 2px rgba(55,138,221,.15)}
-.sc{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:16px;margin-bottom:1rem}
+.frow label{font-size:12px;color:var(--tx2);display:block;margin-bottom:4px}
+.frow input,.frow select,.frow textarea{width:100%;padding:8px 10px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--tx);font-family:inherit;font-size:13px}
+.frow input:focus,.frow select:focus{outline:none;border-color:#85b7eb;box-shadow:0 0 0 2px rgba(55,138,221,.15)}
+.sc{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);padding:16px;margin-bottom:1rem}
 .sc h3{font-size:14px;font-weight:600;margin-bottom:8px}
-.empty{text-align:center;padding:3rem 1rem;color:var(--text2)}
+.empty{text-align:center;padding:3rem 1rem;color:var(--tx2)}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.15);display:none}
-.toast.show{display:block;animation:su .2s ease}
-@keyframes su{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
-.toast.success{background:var(--green-bg);color:var(--green);border:1px solid var(--green-b)}
-.toast.error{background:var(--red-bg);color:var(--red);border:1px solid var(--red-b)}
-.toast.info{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b)}
-.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--text2);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:5px}
+.toast.show{display:block}
+.t-ok{background:#eaf3de;color:#3b6d11;border:1px solid #97c459}
+.t-err{background:#fcebeb;color:#a32d2d;border:1px solid #f09595}
+.t-info{background:#e6f1fb;color:#185fa5;border:1px solid #85b7eb}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--tx2);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:4px}
 @keyframes sp{to{transform:rotate(360deg)}}
-.setup-card{background:var(--amber-bg);border:1px solid var(--amber-b);border-radius:var(--rl);padding:16px;margin-bottom:1.25rem}
-.setup-card h3{font-size:14px;font-weight:600;color:var(--amber);margin-bottom:6px}
-.setup-card p{font-size:13px;color:var(--amber);line-height:1.6}
-@media(max-width:620px){.metrics{grid-template-columns:repeat(3,1fr)}.tc{grid-template-columns:20px 1fr}.tact{grid-column:1/-1;margin-left:28px}}
+.setup{background:#faeeda;border:1px solid #ef9f27;border-radius:var(--rl);padding:14px 16px;margin-bottom:1.25rem;display:none}
+.setup h3{font-size:14px;font-weight:600;color:#854f0b;margin-bottom:4px}
+.setup p{font-size:13px;color:#854f0b;line-height:1.5}
+.hint{background:#e6f1fb;border-radius:var(--r);padding:10px 12px;font-size:12px;color:#185fa5;line-height:1.6;margin-bottom:12px}
+@media(max-width:620px){.metrics{grid-template-columns:repeat(3,1fr)}.tc{grid-template-columns:22px 1fr}.tact{grid-column:1/-1;margin-left:30px}}
 </style>
 </head>
 <body>
-<div class="app" id="app">
+<div class="app">
   <div class="top">
     <div>
       <h1>PM Task Tracker</h1>
-      <div class="sub" id="user-info">Loading...</div>
+      <div class="sub" id="user-info">Ready</div>
     </div>
     <div class="acts">
-      <span id="sync-spinner" style="display:none;font-size:12px;color:var(--text2)"><span class="spin"></span>Syncing...</span>
-      <button class="btn blue" id="sync-btn" onclick="syncM365()">↻ Sync M365</button>
-      <button class="btn amber" onclick="notifyDue()" id="notify-btn">🔔 Notify due</button>
-      <button class="btn" onclick="openModal('add-task')">+ Add task</button>
+      <span id="spin-wrap" style="display:none;font-size:12px;color:var(--tx2)"><span class="spin"></span>Syncing…</span>
+      <button class="btn blue" id="sync-btn" onclick="onSyncClick()">↻ Sync M365</button>
+      <button class="btn amber" onclick="notifyDue()">🔔 Notify due</button>
+      <button class="btn" onclick="openModal('task')">+ Add task</button>
       <button class="btn sm" onclick="openModal('settings')" title="Settings">⚙</button>
     </div>
   </div>
 
-  <div id="setup-banner" class="setup-card" style="display:none">
-    <h3>⚙ Setup required</h3>
-    <p>Enter your Azure App Client ID in Settings to enable Microsoft 365 sync and Teams notifications. Click ⚙ above.</p>
+  <div class="setup" id="setup-banner">
+    <h3>⚙ Connect Microsoft 365</h3>
+    <p>Click ⚙ Settings and enter your Azure App Client ID to enable Sync and Teams notifications. Tasks can be added manually right now.</p>
   </div>
 
   <div class="metrics">
-    <div class="metric"><div class="ml">Active</div><div class="mv" id="m-total">0</div></div>
-    <div class="metric"><div class="ml">In progress</div><div class="mv" id="m-ip">0</div></div>
-    <div class="metric"><div class="ml">Completed</div><div class="mv" id="m-done">0</div></div>
-    <div class="metric"><div class="ml">Overdue</div><div class="mv" id="m-ov" style="color:#e24b4a">0</div></div>
-    <div class="metric"><div class="ml">Owed to me</div><div class="mv" id="m-owed">0</div></div>
+    <div class="met"><div class="ml">Active</div><div class="mv" id="m0">0</div></div>
+    <div class="met"><div class="ml">In progress</div><div class="mv" id="m1">0</div></div>
+    <div class="met"><div class="ml">Completed</div><div class="mv" id="m2">0</div></div>
+    <div class="met"><div class="ml">Overdue</div><div class="mv" id="m3" style="color:#e24b4a">0</div></div>
+    <div class="met"><div class="ml">Owed to me</div><div class="mv" id="m4">0</div></div>
   </div>
 
   <div class="tabs">
@@ -115,169 +108,164 @@ h1{font-size:20px;font-weight:600}
 
   <div id="tab-tasks">
     <div class="abar">
-      <input type="text" id="search" placeholder="Search tasks..." oninput="render()" style="flex:1;max-width:240px">
-      <select id="fstat" onchange="render()">
+      <input type="text" id="srch" placeholder="Search tasks…" oninput="renderTasks()" style="flex:1;max-width:240px">
+      <select id="fst" onchange="renderTasks()">
         <option value="">All statuses</option>
         <option value="new">New</option><option value="inprogress">In progress</option>
         <option value="onhold">On hold</option><option value="completed">Completed</option>
         <option value="wontdo">Not going to do</option>
       </select>
-      <select id="fsrc" onchange="render()">
+      <select id="fsr" onchange="renderTasks()">
         <option value="">All sources</option>
         <option value="manual">Manual</option><option value="outlook">Outlook</option><option value="teams">Teams</option>
       </select>
     </div>
-    <div class="tlist" id="task-list"></div>
+    <div class="tlist" id="tasklist"></div>
   </div>
 
   <div id="tab-owed" style="display:none">
     <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-      <button class="btn" onclick="openModal('add-owed')">+ Add person</button>
+      <button class="btn" onclick="openModal('owed')">+ Add person</button>
     </div>
-    <div id="owed-list"></div>
+    <div id="owedlist"></div>
   </div>
 
   <div id="tab-sync" style="display:none">
     <div class="sc">
       <h3>Auto-sync</h3>
-      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px">
-        Scans Outlook emails and Teams messages. Uses pattern matching to find action items and create tasks automatically.
-        Connect Microsoft 365 via Settings (⚙) to enable. Auto-syncs every 30 min when signed in.
-      </p>
-      <button class="btn blue" onclick="syncM365()">↻ Sync now</button>
+      <p style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:12px">Scans Outlook emails and Teams messages every 30 minutes when signed in. Uses pattern matching to find action items assigned to you.</p>
+      <button class="btn blue" onclick="onSyncClick()">↻ Sync now</button>
     </div>
-    <div class="sc"><h3>Sync history</h3><div id="sync-log-list"><div class="empty" style="padding:1rem">No syncs yet</div></div></div>
+    <div class="sc"><h3>Sync history</h3><div id="synclog"><div class="empty" style="padding:1rem">No syncs yet</div></div></div>
   </div>
 </div>
 
-<!-- Modals -->
-<div class="mbg" id="modal-bg" style="display:none" onclick="if(event.target===this)closeModal()">
-  <div class="modal" id="modal-box"></div>
+<div class="mbg" id="mbg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="mbox"></div>
 </div>
-
 <div class="toast" id="toast"></div>
 
-<script type="module">
-import * as msal from 'https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/dist/index.esm.js';
-window.msal = msal;
+<script>
+// ── Config & State ─────────────────────────────────────────────────────────
+var cfg   = lsGet('pmcfg',   {clientId:'', tenantId:'62ccb864-6a1a-4b5d-8e1c-397dec1a8258'});
+var tasks = lsGet('pmtasks', []);
+var owed  = lsGet('pmowed',  []);
+var logs  = lsGet('pmlogs',  []);
+var msalApp = null, account = null;
 
-// ── Storage ────────────────────────────────────────────────────────────────
-const LS = {
-  get: (k,d) => { try{ return JSON.parse(localStorage.getItem(k))??d }catch{ return d } },
-  set: (k,v) => { try{ localStorage.setItem(k,JSON.stringify(v)) }catch{} }
+var TODAY = function(){ return new Date().toISOString().split('T')[0]; };
+var uid   = function(){ return Math.random().toString(36).slice(2,8)+Date.now().toString(36); };
+var fmt   = function(d){ return d ? new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ''; };
+var isOv  = function(t){ return t.due_date && t.due_date < TODAY() && ['completed','wontdo'].indexOf(t.status)<0; };
+var isDT  = function(t){ return t.due_date === TODAY() && ['completed','wontdo'].indexOf(t.status)<0; };
+var ini   = function(n){ return (n||'').split(' ').map(function(x){return x[0]||'';}).join('').slice(0,2).toUpperCase(); };
+var esc   = function(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+
+var SL = {new:'New',inprogress:'In progress',onhold:'On hold',completed:'Completed',wontdo:'Not going to do'};
+var SC = {
+  new:       'background:#e6f1fb;color:#185fa5',
+  inprogress:'background:#faeeda;color:#854f0b',
+  completed: 'background:#eaf3de;color:#3b6d11',
+  onhold:    'background:#eeedfe;color:#534ab7',
+  wontdo:    'background:#f1efe8;color:#5f5e5a'
 };
+var AVC = [['#e6f1fb','#185fa5'],['#faeeda','#854f0b'],['#eaf3de','#3b6d11'],['#eeedfe','#534ab7'],['#faece7','#993c1d']];
 
-// ── State ──────────────────────────────────────────────────────────────────
-let tasks  = LS.get('pmt_tasks', []);
-let owed   = LS.get('pmt_owed',  []);
-let logs   = LS.get('pmt_logs',  []);
-let cfg    = LS.get('pmt_cfg',   { clientId:'', tenantId:'62ccb864-6a1a-4b5d-8e1c-397dec1a8258' });
-let msalApp= null, account = null, accessToken = null;
-
-const TODAY = () => new Date().toISOString().split('T')[0];
-const uid   = () => Math.random().toString(36).slice(2,8)+Date.now().toString(36);
-const fmt   = d  => d ? new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
-const isOv  = t  => t.due_date && t.due_date < TODAY() && !['completed','wontdo'].includes(t.status);
-const isDT  = t  => t.due_date === TODAY() && !['completed','wontdo'].includes(t.status);
-const ini   = n  => (n||'').split(' ').map(x=>x[0]||'').join('').slice(0,2).toUpperCase();
-
-const SL = { new:'New', inprogress:'In progress', onhold:'On hold', completed:'Completed', wontdo:'Not going to do' };
-const SC = { new:{background:'#e6f1fb',color:'#185fa5'}, inprogress:{background:'#faeeda',color:'#854f0b'},
-             completed:{background:'#eaf3de',color:'#3b6d11'}, onhold:{background:'#eeedfe',color:'#534ab7'},
-             wontdo:{background:'#f1efe8',color:'#5f5e5a'} };
-const AVC=[['#e6f1fb','#185fa5'],['#faeeda','#854f0b'],['#eaf3de','#3b6d11'],['#eeedfe','#534ab7'],['#faece7','#993c1d']];
-
-function save(){ LS.set('pmt_tasks',tasks); LS.set('pmt_owed',owed); LS.set('pmt_logs',logs); LS.set('pmt_cfg',cfg); }
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function lsSave(){ try{ localStorage.setItem('pmtasks',JSON.stringify(tasks)); localStorage.setItem('pmowed',JSON.stringify(owed)); localStorage.setItem('pmlogs',JSON.stringify(logs)); localStorage.setItem('pmcfg',JSON.stringify(cfg)); }catch(e){} }
 
 // ── Toast ──────────────────────────────────────────────────────────────────
-function toast(msg, type='info'){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.className='toast show '+type;
-  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),5000);
+function toast(msg, type){
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show t-'+(type||'info');
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.classList.remove('show'); }, 5000);
 }
 
-// ── MSAL Auth ──────────────────────────────────────────────────────────────
-const SCOPES = ['https://graph.microsoft.com/Mail.Read','https://graph.microsoft.com/Chat.ReadWrite',
-                'https://graph.microsoft.com/ChatMessage.Send','https://graph.microsoft.com/User.Read',
-                'https://graph.microsoft.com/User.ReadBasic.All'];
+// ── MSAL ───────────────────────────────────────────────────────────────────
+var SCOPES = [
+  'https://graph.microsoft.com/Mail.Read',
+  'https://graph.microsoft.com/Chat.ReadWrite',
+  'https://graph.microsoft.com/ChatMessage.Send',
+  'https://graph.microsoft.com/User.Read',
+  'https://graph.microsoft.com/User.ReadBasic.All'
+];
 
-async function initMsal(){
+function initMsal(){
   if(!cfg.clientId){ updateUI(); return; }
-  msalApp = new msal.PublicClientApplication({
-    auth:{ clientId:cfg.clientId, authority:`https://login.microsoftonline.com/${cfg.tenantId}`, redirectUri:window.location.origin },
-    cache:{ cacheLocation:'localStorage', storeAuthStateInCookie:false }
-  });
-  await msalApp.initialize();
-  const result = await msalApp.handleRedirectPromise();
-  if(result){ account=result.account; accessToken=result.accessToken; }
-  else{
-    const accounts = msalApp.getAllAccounts();
-    if(accounts.length>0){
-      account=accounts[0];
-      try{
-        const r = await msalApp.acquireTokenSilent({scopes:SCOPES, account});
-        accessToken=r.accessToken;
-      }catch(e){ account=null; }
-    }
-  }
-  updateUI();
-  if(account) setTimeout(()=>syncM365(true), 1000);
-}
-
-async function signIn(){
-  if(!cfg.clientId){ openModal('settings'); toast('Enter your Azure Client ID in Settings first','error'); return; }
-  try{ await msalApp.loginRedirect({scopes:SCOPES}); }
-  catch(e){ toast('Sign-in failed: '+e.message,'error'); }
-}
-
-async function signOut(){
-  if(!msalApp||!account) return;
-  account=null; accessToken=null;
-  await msalApp.logoutRedirect({account});
-}
-
-async function getToken(){
-  if(!msalApp||!account) throw new Error('NOT_SIGNED_IN');
   try{
-    const r = await msalApp.acquireTokenSilent({scopes:SCOPES, account});
-    accessToken=r.accessToken; return r.accessToken;
-  }catch(e){
-    const r = await msalApp.acquireTokenPopup({scopes:SCOPES});
-    accessToken=r.accessToken; return r.accessToken;
-  }
+    msalApp = new msal.PublicClientApplication({
+      auth:{ clientId:cfg.clientId, authority:'https://login.microsoftonline.com/'+cfg.tenantId, redirectUri:window.location.origin },
+      cache:{ cacheLocation:'localStorage', storeAuthStateInCookie:false }
+    });
+    msalApp.initialize().then(function(){
+      return msalApp.handleRedirectPromise();
+    }).then(function(result){
+      if(result){ account = result.account; }
+      else{
+        var accounts = msalApp.getAllAccounts();
+        if(accounts.length > 0){ account = accounts[0]; }
+      }
+      updateUI();
+      if(account){ setTimeout(function(){ syncM365(true); }, 1500); }
+    }).catch(function(e){ console.error('MSAL init error:', e); updateUI(); });
+  } catch(e){ console.error('MSAL create error:', e); updateUI(); }
 }
 
-// ── Graph API ──────────────────────────────────────────────────────────────
-async function graphGet(path, params={}){
-  const token = await getToken();
-  const url = new URL('https://graph.microsoft.com/v1.0'+path);
-  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
-  const r = await fetch(url, {headers:{Authorization:'Bearer '+token}});
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
+function signIn(){
+  if(!cfg.clientId){ openModal('settings'); toast('Enter your Azure Client ID in Settings first','err'); return; }
+  msalApp.loginRedirect({scopes:SCOPES}).catch(function(e){ toast('Sign-in failed: '+e.message,'err'); });
 }
-async function graphPost(path, body){
-  const token = await getToken();
-  const r = await fetch('https://graph.microsoft.com/v1.0'+path, {
-    method:'POST', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-    body:JSON.stringify(body)
+function signOut(){
+  if(!msalApp||!account) return;
+  msalApp.logoutRedirect({account:account});
+}
+
+function getToken(){
+  return msalApp.acquireTokenSilent({scopes:SCOPES, account:account}).catch(function(){
+    return msalApp.acquireTokenPopup({scopes:SCOPES});
+  }).then(function(r){ return r.accessToken; });
+}
+
+// ── Graph ──────────────────────────────────────────────────────────────────
+function graphGet(path, params){
+  return getToken().then(function(token){
+    var url = new URL('https://graph.microsoft.com/v1.0'+path);
+    if(params) Object.keys(params).forEach(function(k){ url.searchParams.set(k, params[k]); });
+    return fetch(url.toString(), {headers:{Authorization:'Bearer '+token}});
+  }).then(function(r){
+    if(!r.ok) return r.text().then(function(t){ throw new Error(t); });
+    return r.json();
   });
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
 }
 
-// ── Task extraction (rule-based) ───────────────────────────────────────────
-const ADD = [
+function graphPost(path, body){
+  return getToken().then(function(token){
+    return fetch('https://graph.microsoft.com/v1.0'+path, {
+      method:'POST',
+      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+  }).then(function(r){
+    if(!r.ok) return r.text().then(function(t){ throw new Error(t); });
+    return r.json();
+  });
+}
+
+// ── Rule-based extractor ───────────────────────────────────────────────────
+var ACT = [
   /\bplease\b.{0,60}(review|confirm|update|provide|send|share|approve|respond|fix|action)/i,
   /\b(action required|action needed|your (input|approval|review|feedback)|waiting on you)\b/i,
-  /\b(can you|could you|kindly|request you)\b.{0,60}(review|confirm|update|provide|send|check|approve)/i,
-  /\b(urgent|asap|critical|blocker|high priority|deadline|due (by|date))\b/i,
-  /\b(follow.?up|reminder|don.t forget)\b/i,
+  /\b(can you|could you|kindly|request you)\b.{0,60}(review|confirm|provide|send|approve)/i,
+  /\b(urgent|asap|critical|blocker|high priority|deadline)\b/i,
+  /\b(follow.?up|reminder)\b/i
 ];
-const OWD = [/\b(waiting (for|on)|pending from|will (send|provide|share) you)\b/i, /\b(as (requested|discussed|agreed))\b/i];
-const JNK = /newsletter|unsubscribe|digest|no.?reply|automatic reply|out of office|\booo\b|accepted:|declined:|cancelled:|fw:|fwd:/i;
-function addDays(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
-function dueFromText(t){ const s=t.toLowerCase();
+var OWD = [/\b(waiting (for|on)|pending from|will (send|provide|share) you)\b/i];
+var JNK = /newsletter|unsubscribe|digest|no.?reply|automatic reply|out of office|\booo\b|accepted:|declined:|cancelled:/i;
+
+function addDays(n){ var d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
+function dueFmt(t){ var s=t.toLowerCase();
   if(/today|eod/.test(s)) return TODAY();
   if(/tomorrow/.test(s)) return addDays(1);
   if(/this week|eow|by friday/.test(s)) return addDays(3);
@@ -285,379 +273,369 @@ function dueFromText(t){ const s=t.toLowerCase();
   if(/urgent|asap|critical|blocker/.test(s)) return addDays(1);
   return addDays(3);
 }
-function extractTasks(emails, existing){
-  const tasks=[], owed=[], exLow=existing.map(t=>t.toLowerCase());
-  for(const e of emails){
-    const sub=e.subject||'', prev=e.bodyPreview||'';
-    const comb=(sub+' '+prev).toLowerCase();
-    const sender=(e.sender?.name||e.sender?.address||'Unknown').replace(/\s*\(.*?\)/g,'').trim();
-    const saddr=e.sender?.address||'';
-    if(JNK.test(sub)||!sub.trim()) continue;
-    const isAdo=saddr.includes('azuredevops')||/azure devops/i.test(sub);
+
+function extractFromEmails(emails){
+  var newTasks=[],newOwed=[];
+  var exTitles = tasks.map(function(t){ return t.title.toLowerCase(); });
+  emails.forEach(function(e){
+    var sub=e.subject||'', prev=e.bodyPreview||'';
+    var comb=(sub+' '+prev).toLowerCase();
+    var sender=((e.sender&&e.sender.name)||'Unknown').replace(/\s*\(.*?\)/g,'').trim();
+    var saddr=(e.sender&&e.sender.address)||'';
+    if(JNK.test(sub)||!sub.trim()) return;
+    // ADO
+    var isAdo=saddr.includes('azuredevops')||/azure devops/i.test(sub);
     if(isAdo){
-      const m=(sub+' '+prev).match(/(Bug|User Story|Task|Feature|Test Case)\s+(\d+)\s*[-—]\s*(.{5,100})/i);
-      const title=m?`Review ${m[1]} #${m[2]} — ${m[3].trim().slice(0,100)}`:`Review ADO: ${sub.replace(/^Re:\s*/i,'').slice(0,120)}`;
-      if(!exLow.some(x=>x.includes(title.toLowerCase().slice(0,35))))
-        tasks.push({title,source:'outlook',dueDate:/bug/i.test(sub)?addDays(1):addDays(2),ref:`ADO: ${sub.slice(0,80)}`});
-      continue;
+      var m=(sub+' '+prev).match(/(Bug|User Story|Task|Feature|Test Case)\s+(\d+)\s*[-\u2014]\s*(.{5,100})/i);
+      var title=m?'Review '+m[1]+' #'+m[2]+' \u2014 '+m[3].trim().slice(0,100):'Review ADO: '+sub.replace(/^Re:\s*/i,'').slice(0,120);
+      if(!exTitles.some(function(x){return x.includes(title.toLowerCase().slice(0,35));}))
+        newTasks.push({title:title,source:'outlook',dueDate:/bug/i.test(sub)?addDays(1):addDays(2),ref:'ADO: '+sub.slice(0,80)});
+      return;
     }
-    const isTeams=saddr.includes('teams.mail')||saddr.includes('noreply@email.teams');
+    // Teams
+    var isTeams=saddr.includes('teams.mail')||saddr.includes('noreply@email.teams');
     if(isTeams){
-      const ch=prev.match(/mentioned\s+\w+\s+in\s+(.{5,60})/i)?.[1]||'Teams';
-      const title=`Respond to Teams mention in ${ch.trim().slice(0,60)}`;
-      if(!exLow.some(x=>x.includes(ch.toLowerCase().slice(0,20))))
-        tasks.push({title,source:'teams',dueDate:addDays(1),ref:`Teams: ${ch.trim().slice(0,60)}`});
-      continue;
+      var ch=(prev.match(/mentioned\s+\w+\s+in\s+(.{5,60})/i)||[])[1]||'Teams';
+      var title2='Respond to Teams mention in '+ch.trim().slice(0,60);
+      if(!exTitles.some(function(x){return x.includes(ch.toLowerCase().slice(0,20));}))
+        newTasks.push({title:title2,source:'teams',dueDate:addDays(1),ref:'Teams: '+ch.trim().slice(0,60)});
+      return;
     }
-    if(OWD.some(p=>p.test(comb)))
-      owed.push({person:sender,email:saddr,description:sub.replace(/^Re:\s*/i,'').slice(0,120),dueDate:dueFromText(comb)});
-    if(ADD.some(p=>p.test(comb))){
-      const clean=sub.replace(/^(Re:|Fwd?:|FW:)\s*/gi,'').trim();
-      const title=`Review and action: ${clean}`.slice(0,160);
-      if(!exLow.some(x=>x.includes(clean.toLowerCase().slice(0,30))))
-        tasks.push({title,source:'outlook',dueDate:dueFromText(comb),ref:`Email from ${sender}`});
+    if(OWD.some(function(p){return p.test(comb);}))
+      newOwed.push({person:sender,email:saddr,description:sub.replace(/^Re:\s*/i,'').slice(0,120),dueDate:dueFmt(comb)});
+    if(ACT.some(function(p){return p.test(comb);})){
+      var clean=sub.replace(/^(Re:|Fwd?:|FW:)\s*/gi,'').trim();
+      var t3=('Review and action: '+clean).slice(0,160);
+      if(!exTitles.some(function(x){return x.includes(clean.toLowerCase().slice(0,30));}))
+        newTasks.push({title:t3,source:'outlook',dueDate:dueFmt(comb),ref:'Email from '+sender});
     }
-  }
-  return {tasks,owed};
+  });
+  return {tasks:newTasks,owed:newOwed};
 }
 
 // ── Sync ───────────────────────────────────────────────────────────────────
-async function syncM365(silent=false){
+function syncM365(silent){
   if(!account){ if(!silent) signIn(); return; }
-  document.getElementById('sync-spinner').style.display='';
+  document.getElementById('spin-wrap').style.display='';
   document.getElementById('sync-btn').disabled=true;
-  const logEntry={time:new Date().toLocaleString(),ok:true,msg:''};
-  try{
-    const since=new Date(Date.now()-7*86400000).toISOString();
-    const data=await graphGet('/me/messages',{
-      '$filter':`receivedDateTime ge ${since}`,
-      '$select':'id,subject,bodyPreview,sender,receivedDateTime',
-      '$orderby':'receivedDateTime desc','$top':'50'
-    });
-    const emails=data.value||[];
-    const extracted=extractTasks(emails, tasks.map(t=>t.title));
-    let added=0;
-    for(const t of extracted.tasks){
-      if(!tasks.some(x=>x.title.toLowerCase()===t.title.toLowerCase())){
+  var since=new Date(Date.now()-7*86400000).toISOString();
+  graphGet('/me/messages',{'$filter':'receivedDateTime ge '+since,'$select':'id,subject,bodyPreview,sender,receivedDateTime','$orderby':'receivedDateTime desc','$top':'50'})
+  .then(function(data){
+    var emails=data.value||[];
+    var ext=extractFromEmails(emails);
+    var added=0;
+    ext.tasks.forEach(function(t){
+      if(!tasks.some(function(x){return x.title.toLowerCase()===t.title.toLowerCase();})){
         tasks.unshift({id:uid(),title:t.title,status:'new',source:t.source,due_date:t.dueDate,ref:t.ref||'',createdAt:TODAY()});
         added++;
       }
-    }
-    for(const o of extracted.owed){
-      const ex=owed.find(x=>x.person.toLowerCase()===o.person.toLowerCase());
+    });
+    ext.owed.forEach(function(o){
+      var ex=owed.find(function(x){return x.person.toLowerCase()===o.person.toLowerCase();});
       if(ex) ex.items.push({id:uid(),desc:o.description,due:o.dueDate||''});
       else owed.push({id:uid(),person:o.person,email:o.email||'',items:[{id:uid(),desc:o.description,due:o.dueDate||''}]});
-    }
-    logEntry.msg=`${emails.length} emails scanned · +${added} tasks added`;
-    save(); render(); renderOwed(); renderMetrics();
-    if(!silent||added>0) toast(`Sync done — ${added} new task${added!==1?'s':''} added`,'success');
-  }catch(e){
-    logEntry.ok=false; logEntry.msg='Error: '+e.message;
-    if(!silent) toast('Sync error: '+e.message,'error');
-  }
-  logs.unshift(logEntry); if(logs.length>20) logs=logs.slice(0,20);
-  save(); renderSyncLogs();
-  document.getElementById('sync-spinner').style.display='none';
-  document.getElementById('sync-btn').disabled=false;
+    });
+    logs.unshift({time:new Date().toLocaleString(),ok:true,msg:emails.length+' emails scanned \u00b7 +'+added+' tasks added'});
+    if(logs.length>20) logs=logs.slice(0,20);
+    lsSave(); renderAll();
+    if(!silent||added>0) toast('Sync done \u2014 '+added+' new task'+(added!==1?'s':'')+' added','ok');
+  }).catch(function(e){
+    logs.unshift({time:new Date().toLocaleString(),ok:false,msg:'Error: '+e.message});
+    lsSave(); renderSyncLog();
+    if(!silent) toast('Sync error: '+e.message,'err');
+  }).finally(function(){
+    document.getElementById('spin-wrap').style.display='none';
+    document.getElementById('sync-btn').disabled=false;
+  });
 }
 
-// ── Teams reminder ─────────────────────────────────────────────────────────
-async function sendTeamsMsg(targetEmail, html){
-  const me=await graphGet('/me',{'$select':'id,displayName'});
-  const uData=await graphGet(`/users/${encodeURIComponent(targetEmail)}`,{'$select':'id,displayName'});
-  // Get or create 1:1 chat
-  let chatId;
-  try{
-    const chats=await graphGet('/me/chats',{'$filter':"chatType eq 'oneOnOne'",'$expand':'members','$top':'50'});
-    const found=(chats.value||[]).find(c=>(c.members||[]).some(m=>m.userId===uData.id));
-    chatId=found?.id;
-  }catch{}
-  if(!chatId){
-    const chat=await graphPost('/chats',{chatType:'oneOnOne',members:[
-      {'@odata.type':'#microsoft.graph.aadUserConversationMember',roles:['owner'],'user@odata.bind':`https://graph.microsoft.com/v1.0/users('${me.id}')`},
-      {'@odata.type':'#microsoft.graph.aadUserConversationMember',roles:['owner'],'user@odata.bind':`https://graph.microsoft.com/v1.0/users('${uData.id}')`}
-    ]});
-    chatId=chat.id;
-  }
-  await graphPost(`/chats/${chatId}/messages`,{body:{contentType:'html',content:html}});
-  return uData.displayName;
+function onSyncClick(){
+  if(!account) signIn(); else syncM365(false);
 }
 
-async function remind(taskId){
-  if(!account){ toast('Sign in to Microsoft 365 first','error'); return; }
-  const task=tasks.find(t=>t.id===taskId);
-  if(!task) return;
-  const email=prompt('Send Teams reminder to (email address):');
-  if(!email) return;
-  try{
-    const me=await graphGet('/me',{'$select':'displayName'});
-    const msg=`<p>Hi,</p><p><b>${me.displayName}</b> sent a reminder:</p><blockquote><b>${task.title}</b>${task.due_date?`<br/>Due: <b>${task.due_date}</b>`:''}</blockquote><p>Please update at your earliest.</p><p><i>PM Task Tracker</i></p>`;
-    const name=await sendTeamsMsg(email,msg);
-    toast(`Teams reminder sent to ${name} ✓`,'success');
-  }catch(e){ toast('Failed: '+e.message,'error'); }
+// ── Teams ──────────────────────────────────────────────────────────────────
+function sendTeamsMsg(email, html){
+  var meId, chatId;
+  return graphGet('/me',{'$select':'id,displayName'}).then(function(me){
+    meId=me.id;
+    return graphGet('/users/'+encodeURIComponent(email),{'$select':'id,displayName'});
+  }).then(function(user){
+    return graphGet('/me/chats',{'$filter':"chatType eq 'oneOnOne'",'$expand':'members','$top':'50'}).then(function(ch){
+      var found=(ch.value||[]).find(function(c){ return (c.members||[]).some(function(m){return m.userId===user.id;}); });
+      if(found) return Promise.resolve({id:found.id});
+      return graphPost('/chats',{chatType:'oneOnOne',members:[
+        {'@odata.type':'#microsoft.graph.aadUserConversationMember',roles:['owner'],'user@odata.bind':'https://graph.microsoft.com/v1.0/users(\''+meId+'\')'},
+        {'@odata.type':'#microsoft.graph.aadUserConversationMember',roles:['owner'],'user@odata.bind':'https://graph.microsoft.com/v1.0/users(\''+user.id+'\')'}
+      ]});
+    }).then(function(chat){
+      chatId=chat.id;
+      return graphPost('/chats/'+chatId+'/messages',{body:{contentType:'html',content:html}});
+    }).then(function(){ return user.displayName; });
+  });
 }
 
-async function notifyDue(){
-  if(!account){ toast('Sign in to Microsoft 365 first','error'); return; }
-  const tod=TODAY();
-  const due=tasks.filter(t=>(t.due_date===tod||t.due_date<tod)&&!['completed','wontdo'].includes(t.status));
-  if(!due.length){ toast('No overdue or due-today tasks','info'); return; }
-  let sent=0;
-  const me=await graphGet('/me',{'$select':'displayName'}).catch(()=>({displayName:'PM'}));
-  for(const t of due){
-    const m=(t.ref||'').match(/[\w.-]+@[\w.-]+\.\w+/);
-    if(!m) continue;
-    try{
-      const ov=t.due_date<tod;
-      const msg=`<p><b>${ov?'⚠️ OVERDUE':'🔔 Due Today'}</b></p><p><b>${me.displayName}</b> is tracking:</p><blockquote><b>${t.title}</b><br/>Due: <b>${t.due_date}</b></blockquote><p><i>PM Task Tracker</i></p>`;
-      await sendTeamsMsg(m[0],msg);
-      sent++;
-    }catch{}
-  }
-  toast(sent>0?`Notified ${sent} contact${sent>1?'s':''} via Teams`:'No contacts found in task references','info');
+function remindTask(id){
+  if(!account){toast('Sign in to M365 first — click Sync M365','err');return;}
+  var t=tasks.find(function(x){return x.id===id;});
+  if(!t) return;
+  var email=prompt('Send Teams reminder to (email address):','');
+  if(!email||!email.trim()) return;
+  graphGet('/me',{'$select':'displayName'}).then(function(me){
+    var msg='<p>Hi,</p><p><b>'+esc(me.displayName)+'</b> sent a reminder:</p><blockquote><b>'+esc(t.title)+'</b>'+(t.due_date?'<br/>Due: <b>'+t.due_date+'</b>':'')+'</blockquote><p>Please update at your earliest.</p><p><i>PM Task Tracker</i></p>';
+    return sendTeamsMsg(email.trim(),msg);
+  }).then(function(name){ toast('Teams reminder sent to '+(name||email)+' \u2713','ok'); })
+  .catch(function(e){ toast('Failed: '+e.message,'err'); });
 }
 
-// ── Render ──────────────────────────────────────────────────────────────────
-function render(){
-  const q=document.getElementById('search').value.toLowerCase();
-  const fs=document.getElementById('fstat').value;
-  const fr=document.getElementById('fsrc').value;
-  let list=tasks.filter(t=>{
-    if(q&&!t.title.toLowerCase().includes(q)) return false;
+function notifyDue(){
+  if(!account){toast('Sign in to M365 first','err');return;}
+  var tod=TODAY();
+  var due=tasks.filter(function(t){ return (t.due_date===tod||t.due_date<tod)&&['completed','wontdo'].indexOf(t.status)<0; });
+  if(!due.length){toast('No overdue or due-today tasks','info');return;}
+  graphGet('/me',{'$select':'displayName'}).then(function(me){
+    var promises=[];
+    due.forEach(function(t){
+      var m=(t.ref||'').match(/[\w.-]+@[\w.-]+\.\w+/);
+      if(!m) return;
+      var ov=t.due_date<tod;
+      var msg='<p><b>'+(ov?'\u26a0\ufe0f OVERDUE':'\ud83d\udd14 Due Today')+'</b></p><p><b>'+esc(me.displayName)+'</b> is tracking:</p><blockquote><b>'+esc(t.title)+'</b><br/>Due: <b>'+t.due_date+'</b></blockquote><p><i>PM Task Tracker</i></p>';
+      promises.push(sendTeamsMsg(m[0],msg).catch(function(){}));
+    });
+    return Promise.all(promises).then(function(){ toast('Due-date notifications sent via Teams \u2713','ok'); });
+  }).catch(function(e){ toast('Error: '+e.message,'err'); });
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function renderTasks(){
+  var q=document.getElementById('srch').value.toLowerCase();
+  var fs=document.getElementById('fst').value;
+  var fr=document.getElementById('fsr').value;
+  var list=tasks.filter(function(t){
+    if(q&&t.title.toLowerCase().indexOf(q)<0) return false;
     if(fs&&t.status!==fs) return false;
     if(fr&&t.source!==fr) return false;
     return true;
-  }).sort((a,b)=>{
+  }).sort(function(a,b){
     if(isOv(a)!==isOv(b)) return isOv(a)?-1:1;
     if(isDT(a)!==isDT(b)) return isDT(a)?-1:1;
     return (a.due_date||'z')<(b.due_date||'z')?-1:1;
   });
-  const el=document.getElementById('task-list');
-  if(!list.length){el.innerHTML='<div class="empty">No tasks found</div>';return;}
-  el.innerHTML=list.map(t=>{
-    const ov=isOv(t),dt=isDT(t);
-    const sc=SC[t.status]||SC.new;
-    const dBdg=t.due_date&&!['completed','wontdo'].includes(t.status)
-      ?`<span class="bdg" style="background:${ov?'#fcebeb':dt?'#faeeda':'#f5f5f4'};color:${ov?'#a32d2d':dt?'#854f0b':'#6b6b67'}">${ov?'Overdue: '+fmt(t.due_date):dt?'Due today':'Due '+fmt(t.due_date)}</span>`:'';
-    return `<div class="tc" style="border-left:${ov?'3px solid #e24b4a':dt?'3px solid #ef9f27':''}">
-      <div class="chk ${t.status==='completed'?'done':''}" onclick="toggleDone('${t.id}')">${t.status==='completed'?'✓':''}</div>
-      <div>
-        <div style="font-size:14px;line-height:1.4;word-break:break-word;${['completed','wontdo'].includes(t.status)?'text-decoration:line-through;color:var(--text2)':''}">${esc(t.title)}</div>
-        <div class="tmeta">
-          <span class="bdg" style="background:${sc.background};color:${sc.color}">${SL[t.status]}</span>
-          ${t.source!=='manual'?`<span class="bdg" style="background:#f5f5f4;color:#6b6b67">${t.source==='outlook'?'Outlook':'Teams'}</span>`:''}
-          ${dBdg}
-          ${t.ref?`<span class="bdg" style="background:#f5f5f4;color:#6b6b67;font-style:italic;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(t.ref)}">${esc(t.ref)}</span>`:''}
-        </div>
-      </div>
-      <div class="tact">
-        <select onchange="updTask('${t.id}','status',this.value)">${Object.entries(SL).map(([v,l])=>`<option value="${v}"${t.status===v?' selected':''}>${l}</option>`).join('')}</select>
-        <input type="date" value="${t.due_date||''}" onchange="updTask('${t.id}','due_date',this.value)">
-        <button class="btn sm amber ico" title="Send Teams reminder" onclick="remind('${t.id}')">🔔</button>
-        <button class="btn sm red ico" title="Delete" onclick="delTask('${t.id}')">✕</button>
-      </div>
-    </div>`;
+  var el=document.getElementById('tasklist');
+  if(!list.length){el.innerHTML='<div class="empty">No tasks found. Click "+ Add task" to get started.</div>';return;}
+  el.innerHTML=list.map(function(t){
+    var ov=isOv(t),dt=isDT(t);
+    var dBdg=t.due_date&&['completed','wontdo'].indexOf(t.status)<0
+      ?'<span class="bdg" style="background:'+(ov?'#fcebeb':dt?'#faeeda':'#f5f5f4')+';color:'+(ov?'#a32d2d':dt?'#854f0b':'#6b6b67')+'">'+(ov?'Overdue: '+fmt(t.due_date):dt?'Due today':'Due '+fmt(t.due_date))+'</span>':'';
+    var s=['completed','wontdo'].indexOf(t.status)>=0;
+    return '<div class="tc" style="border-left:'+(ov?'3px solid #e24b4a':dt?'3px solid #ef9f27':'')+'">'
+      +'<div class="chk '+(t.status==='completed'?'chkd':'')+'" onclick="toggleDone(\''+t.id+'\')">'+(t.status==='completed'?'✓':'')+'</div>'
+      +'<div><div style="font-size:14px;line-height:1.4;word-break:break-word;'+(s?'text-decoration:line-through;color:var(--tx2)':'')+'">'+esc(t.title)+'</div>'
+      +'<div class="tmeta"><span class="bdg" style="'+SC[t.status]+'">'+SL[t.status]+'</span>'
+      +(t.source!=='manual'?'<span class="bdg" style="background:#f5f5f4;color:#6b6b67">'+(t.source==='outlook'?'Outlook':'Teams')+'</span>':'')
+      +dBdg
+      +(t.ref?'<span class="bdg" style="background:#f5f5f4;color:#6b6b67;font-style:italic;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(t.ref)+'">'+esc(t.ref)+'</span>':'')
+      +'</div></div>'
+      +'<div class="tact">'
+      +'<select onchange="updTask(\''+t.id+'\',\'status\',this.value)">'
+      +Object.keys(SL).map(function(v){return '<option value="'+v+'"'+(t.status===v?' selected':'')+'>'+SL[v]+'</option>';}).join('')
+      +'</select>'
+      +'<input type="date" value="'+(t.due_date||'')+'" onchange="updTask(\''+t.id+'\',\'due_date\',this.value)">'
+      +'<button class="btn sm amber ico" title="Send Teams reminder" onclick="remindTask(\''+t.id+'\')">🔔</button>'
+      +'<button class="btn sm redd ico" title="Delete" onclick="delTask(\''+t.id+'\')">✕</button>'
+      +'</div></div>';
   }).join('');
 }
 
 function renderOwed(){
-  const el=document.getElementById('owed-list');
-  if(!owed.length){el.innerHTML='<div class="empty">No items tracked</div>';return;}
-  el.innerHTML=owed.map((o,i)=>{
-    const [bg,fg]=AVC[i%AVC.length];
-    return `<div class="oc">
-      <div class="oh">
-        <div class="av" style="background:${bg};color:${fg}">${ini(o.person)}</div>
-        <div style="flex:1"><div style="font-weight:600">${esc(o.person)}</div><div style="font-size:12px;color:var(--text2)">${o.items.length} pending${o.email?' · '+esc(o.email):''}</div></div>
-        ${o.email?`<button class="btn sm blue" onclick="remindOwed('${o.id}')">🔔 Remind</button>`:''}
-        <button class="btn sm" style="margin-left:6px" onclick="openAddOwedItem('${o.id}','${esc(o.person)}')">+ Item</button>
-      </div>
-      <div>${o.items.map(item=>`<div class="oi">
-        <span>${esc(item.desc)}</span>
-        <div style="display:flex;gap:5px;align-items:center">
-          ${item.due?`<span class="bdg" style="background:${item.due<TODAY()?'#fcebeb':item.due===TODAY()?'#faeeda':'#f5f5f4'};color:${item.due<TODAY()?'#a32d2d':item.due===TODAY()?'#854f0b':'#6b6b67'}">${fmt(item.due)}</span>`:''}
-          <button class="btn sm green ico" title="Received" onclick="resolveOwed('${o.id}','${item.id}')">✓</button>
-        </div>
-      </div>`).join('')}</div>
-    </div>`;
+  var el=document.getElementById('owedlist');
+  if(!owed.length){el.innerHTML='<div class="empty">No items tracked — add people whose deliverables you are waiting on</div>';return;}
+  el.innerHTML=owed.map(function(o,i){
+    var c=AVC[i%AVC.length];
+    return '<div class="oc">'
+      +'<div class="oh"><div class="av" style="background:'+c[0]+';color:'+c[1]+'">'+ini(o.person)+'</div>'
+      +'<div style="flex:1"><div style="font-weight:600">'+esc(o.person)+'</div>'
+      +'<div style="font-size:12px;color:var(--tx2)">'+o.items.length+' pending'+(o.email?' \u00b7 '+esc(o.email):'')+'</div></div>'
+      +(o.email?'<button class="btn sm blue" onclick="remindOwed(\''+o.id+'\')">🔔 Remind</button>':'')
+      +'<button class="btn sm" style="margin-left:6px" onclick="openOwedItem(\''+o.id+'\',\''+esc(o.person)+'\')">+ Item</button></div>'
+      +'<div>'+o.items.map(function(item){
+        var tod=TODAY();
+        var dstyle=item.due?(item.due<tod?'background:#fcebeb;color:#a32d2d':item.due===tod?'background:#faeeda;color:#854f0b':'background:#f5f5f4;color:#6b6b67'):'';
+        return '<div class="oi"><span>'+esc(item.desc)+'</span>'
+          +'<div style="display:flex;gap:5px;align-items:center">'
+          +(item.due?'<span class="bdg" style="'+dstyle+'">'+fmt(item.due)+'</span>':'')
+          +'<button class="btn sm green ico" onclick="resolveOwed(\''+o.id+'\',\''+item.id+'\')" title="Mark received">✓</button>'
+          +'</div></div>';
+      }).join('')+'</div></div>';
   }).join('');
 }
 
 function renderMetrics(){
-  const tod=TODAY();
-  document.getElementById('m-total').textContent=tasks.filter(t=>!['completed','wontdo'].includes(t.status)).length;
-  document.getElementById('m-ip').textContent=tasks.filter(t=>t.status==='inprogress').length;
-  document.getElementById('m-done').textContent=tasks.filter(t=>t.status==='completed').length;
-  document.getElementById('m-ov').textContent=tasks.filter(isOv).length;
-  document.getElementById('m-owed').textContent=owed.reduce((s,o)=>s+o.items.length,0);
+  var tod=TODAY();
+  document.getElementById('m0').textContent=tasks.filter(function(t){return ['completed','wontdo'].indexOf(t.status)<0;}).length;
+  document.getElementById('m1').textContent=tasks.filter(function(t){return t.status==='inprogress';}).length;
+  document.getElementById('m2').textContent=tasks.filter(function(t){return t.status==='completed';}).length;
+  document.getElementById('m3').textContent=tasks.filter(isOv).length;
+  document.getElementById('m4').textContent=owed.reduce(function(s,o){return s+o.items.length;},0);
 }
 
-function renderSyncLogs(){
-  const el=document.getElementById('sync-log-list');
+function renderSyncLog(){
+  var el=document.getElementById('synclog');
   if(!logs.length){el.innerHTML='<div class="empty" style="padding:1rem">No syncs yet</div>';return;}
-  el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text2)">Time</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text2)">Result</th></tr></thead>
-    <tbody>${logs.map(l=>`<tr><td style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap">${l.time}</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);color:${l.ok?'var(--green)':'var(--red)'}">${esc(l.msg)}</td></tr>`).join('')}</tbody></table>`;
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>'
+    +'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd);color:var(--tx2)">Time</th>'
+    +'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd);color:var(--tx2)">Result</th></tr></thead><tbody>'
+    +logs.map(function(l){ return '<tr><td style="padding:6px 8px;border-bottom:1px solid var(--bd);color:var(--tx2);white-space:nowrap">'+l.time+'</td>'
+    +'<td style="padding:6px 8px;border-bottom:1px solid var(--bd);color:'+(l.ok?'#3b6d11':'#a32d2d')+'">'+esc(l.msg)+'</td></tr>'; }).join('')
+    +'</tbody></table>';
 }
+
+function renderAll(){ renderTasks(); renderOwed(); renderMetrics(); renderSyncLog(); }
 
 function updateUI(){
-  const info=document.getElementById('user-info');
-  const syncBtn=document.getElementById('sync-btn');
+  var info=document.getElementById('user-info');
+  var btn=document.getElementById('sync-btn');
+  var banner=document.getElementById('setup-banner');
   if(!cfg.clientId){
-    info.textContent='Setup required — click ⚙ Settings';
-    document.getElementById('setup-banner').style.display='';
-    syncBtn.textContent='Sign in to M365';
+    info.textContent='Setup required — click ⚙ to configure';
+    banner.style.display=''; btn.textContent='↻ Sync M365';
   } else if(account){
-    info.textContent=`${account.name||account.username} · Auto-sync every 30 min`;
-    document.getElementById('setup-banner').style.display='none';
-    syncBtn.textContent='↻ Sync M365';
-    syncBtn.onclick=()=>syncM365();
+    info.textContent=(account.name||account.username)+' \u00b7 Auto-sync every 30 min';
+    banner.style.display='none'; btn.textContent='↻ Sync M365';
   } else {
-    info.textContent='Microsoft 365 not signed in';
-    document.getElementById('setup-banner').style.display='none';
-    syncBtn.textContent='Sign in to M365';
-    syncBtn.onclick=signIn;
+    info.textContent='Click Sync M365 to sign in';
+    banner.style.display=''; btn.textContent='Sign in to M365';
   }
-  render(); renderOwed(); renderMetrics(); renderSyncLogs();
 }
 
-// ── Actions ────────────────────────────────────────────────────────────────
-window.updTask=(id,k,v)=>{ const t=tasks.find(x=>x.id===id); if(t){t[k]=v;save();render();renderMetrics();} };
-window.delTask=id=>{ if(confirm('Delete?')){tasks=tasks.filter(x=>x.id!==id);save();render();renderMetrics();} };
-window.toggleDone=id=>{ const t=tasks.find(x=>x.id===id); if(t){t.status=t.status==='completed'?'inprogress':'completed';save();render();renderMetrics();} };
-window.resolveOwed=(oid,iid)=>{ const o=owed.find(x=>x.id===oid); if(o){o.items=o.items.filter(i=>i.id!==iid);if(!o.items.length)owed=owed.filter(x=>x.id!==oid);save();renderOwed();renderMetrics();} };
-window.remind=remind;
-window.notifyDue=notifyDue;
-window.syncM365=syncM365;
-window.signIn=signIn;
-window.signOut=signOut;
-
-window.remindOwed=async(oid)=>{
-  if(!account){toast('Sign in to M365 first','error');return;}
-  const o=owed.find(x=>x.id===oid);
-  if(!o?.email) return;
-  try{
-    const me=await graphGet('/me',{'$select':'displayName'}).catch(()=>({displayName:'PM'}));
-    const items=o.items.map(i=>`• ${i.desc}${i.due?' (due '+i.due+')':''}`).join('<br/>');
-    const msg=`<p>Hi ${esc(o.person)},</p><p><b>${esc(me.displayName)}</b> is following up:</p><blockquote>${items}</blockquote><p>Please provide an update. Thank you!</p><p><i>PM Task Tracker</i></p>`;
-    const name=await sendTeamsMsg(o.email,msg);
-    toast(`Reminder sent to ${name} ✓`,'success');
-  }catch(e){toast('Error: '+e.message,'error');}
-};
-
-window.openAddOwedItem=(oid,pname)=>openModal('add-owed-item',{oid,pname});
+// ── Actions ─────────────────────────────────────────────────────────────────
+function updTask(id,k,v){
+  var t=tasks.find(function(x){return x.id===id;});
+  if(t){t[k]=v;lsSave();renderTasks();renderMetrics();}
+}
+function delTask(id){
+  if(!confirm('Delete this task?')) return;
+  tasks=tasks.filter(function(x){return x.id!==id;});
+  lsSave();renderTasks();renderMetrics();
+}
+function toggleDone(id){
+  var t=tasks.find(function(x){return x.id===id;});
+  if(t){t.status=t.status==='completed'?'inprogress':'completed';lsSave();renderTasks();renderMetrics();}
+}
+function resolveOwed(oid,iid){
+  var o=owed.find(function(x){return x.id===oid;});
+  if(o){o.items=o.items.filter(function(i){return i.id!==iid;});if(!o.items.length)owed=owed.filter(function(x){return x.id!==oid;});lsSave();renderOwed();renderMetrics();}
+}
+function remindOwed(oid){
+  if(!account){toast('Sign in to M365 first','err');return;}
+  var o=owed.find(function(x){return x.id===oid;});
+  if(!o||!o.email) return;
+  graphGet('/me',{'$select':'displayName'}).then(function(me){
+    var items=o.items.map(function(i){return '\u2022 '+i.desc+(i.due?' (due '+i.due+')':'');}).join('<br/>');
+    var msg='<p>Hi '+esc(o.person)+',</p><p><b>'+esc(me.displayName)+'</b> is following up:</p><blockquote>'+items+'</blockquote><p>Please provide an update. Thank you!</p><p><i>PM Task Tracker</i></p>';
+    return sendTeamsMsg(o.email,msg);
+  }).then(function(name){ toast('Reminder sent to '+(name||o.person)+' \u2713','ok'); })
+  .catch(function(e){ toast('Error: '+e.message,'err'); });
+}
+function openOwedItem(oid,pname){ openModal('oitem',{oid:oid,pname:pname}); }
+function switchTab(name,el){
+  ['tasks','owed','sync'].forEach(function(t){document.getElementById('tab-'+t).style.display=t===name?'block':'none';});
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  if(name==='sync') renderSyncLog();
+}
 
 // ── Modals ─────────────────────────────────────────────────────────────────
-window.openModal=(type,data={})=>{
-  const bg=document.getElementById('modal-bg');
-  const box=document.getElementById('modal-box');
+function openModal(type, data){
+  data = data || {};
+  var bg=document.getElementById('mbg'), box=document.getElementById('mbox');
   bg.style.display='flex';
+  if(type==='task'){
+    box.innerHTML='<h2>Add task</h2>'
+      +'<div class="frow"><label>Title *</label><input id="mt" placeholder="What needs to be done?" autofocus></div>'
+      +'<div class="frow"><label>Status</label><select id="ms">'+Object.keys(SL).map(function(v){return '<option value="'+v+'">'+SL[v]+'</option>';}).join('')+'</select></div>'
+      +'<div class="frow"><label>Due date</label><input type="date" id="md"></div>'
+      +'<div class="frow"><label>Source</label><select id="mr"><option value="manual">Manual</option><option value="outlook">Outlook</option><option value="teams">Teams</option></select></div>'
+      +'<div class="frow"><label>Reference (optional)</label><input id="mf" placeholder="Email subject / Teams thread"></div>'
+      +'<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">'
+      +'<button class="btn" onclick="closeModal()">Cancel</button>'
+      +'<button class="btn pri" onclick="saveTask()">Save task</button></div>';
+  } else if(type==='owed'){
+    box.innerHTML='<h2>Add person</h2>'
+      +'<div class="frow"><label>Name *</label><input id="mp" placeholder="Full name" autofocus></div>'
+      +'<div class="frow"><label>Email (for Teams notifications)</label><input id="me2" placeholder="name@thomsonreuters.com"></div>'
+      +'<div class="frow"><label>What do they owe you? *</label><input id="md2" placeholder="e.g. API spec document"></div>'
+      +'<div class="frow"><label>Due date</label><input type="date" id="mdd"></div>'
+      +'<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">'
+      +'<button class="btn" onclick="closeModal()">Cancel</button>'
+      +'<button class="btn pri" onclick="saveOwed()">Save</button></div>';
+  } else if(type==='oitem'){
+    box.innerHTML='<h2>Add item for '+esc(data.pname)+'</h2>'
+      +'<div class="frow"><label>Description *</label><input id="oid" placeholder="What do they owe you?" autofocus></div>'
+      +'<div class="frow"><label>Due date</label><input type="date" id="odd"></div>'
+      +'<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">'
+      +'<button class="btn" onclick="closeModal()">Cancel</button>'
+      +'<button class="btn pri" onclick="saveOItem(\''+data.oid+'\')">Save</button></div>';
+  } else if(type==='settings'){
+    box.innerHTML='<h2>⚙ Microsoft 365 Settings</h2>'
+      +'<p style="font-size:13px;color:var(--tx2);margin-bottom:1rem;line-height:1.6">Enter your Azure App Client ID to enable M365 sync and Teams notifications. Uses browser OAuth (no client secret needed).</p>'
+      +'<div class="hint"><strong>Where to get Client ID:</strong><br>'
+      +'1. Go to <a href="https://portal.azure.com" target="_blank">portal.azure.com</a> \u2192 Azure Active Directory \u2192 App Registrations<br>'
+      +'2. Open your "PM Task Tracker" app (or create one)<br>'
+      +'3. Set platform to <strong>Single-page application (SPA)</strong><br>'
+      +'4. Set Redirect URI to <strong>'+window.location.origin+'</strong><br>'
+      +'5. Copy the Application (Client) ID</div>'
+      +'<div class="frow"><label>Azure Application (Client) ID *</label><input id="cid" value="'+esc(cfg.clientId||'')+'" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autofocus></div>'
+      +'<div class="frow"><label>Tenant ID (Thomson Reuters pre-filled)</label><input id="tid" value="'+esc(cfg.tenantId||'62ccb864-6a1a-4b5d-8e1c-397dec1a8258')+'"></div>'
+      +(account?'<p style="font-size:13px;color:var(--tx2);margin-bottom:8px">Signed in as: <strong>'+esc(account.name||account.username)+'</strong></p>'
+        +'<button class="btn redd sm" onclick="signOut()" style="margin-bottom:12px">Sign out of M365</button>':'')
+      +'<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">'
+      +'<button class="btn" onclick="closeModal()">Cancel</button>'
+      +'<button class="btn pri" onclick="saveSettings()">Save & connect</button></div>';
+  }
+  setTimeout(function(){ var el=box.querySelector('input[autofocus]'); if(el) el.focus(); },50);
+}
 
-  if(type==='add-task') box.innerHTML=`
-    <h2>Add task</h2>
-    <div class="frow"><label>Title *</label><input id="m-title" placeholder="What needs to be done?" autofocus></div>
-    <div class="frow"><label>Status</label><select id="m-status">${Object.entries(SL).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
-    <div class="frow"><label>Due date</label><input type="date" id="m-due"></div>
-    <div class="frow"><label>Source</label><select id="m-src"><option value="manual">Manual</option><option value="outlook">Outlook</option><option value="teams">Teams</option></select></div>
-    <div class="frow"><label>Reference (optional)</label><input id="m-ref" placeholder="Email subject / Teams thread"></div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn pri" onclick="saveTask()">Save task</button>
-    </div>`;
+function closeModal(){
+  document.getElementById('mbg').style.display='none';
+}
 
-  else if(type==='add-owed') box.innerHTML=`
-    <h2>Add person</h2>
-    <div class="frow"><label>Name *</label><input id="m-person" placeholder="Full name" autofocus></div>
-    <div class="frow"><label>Email (for Teams notifications)</label><input id="m-email" placeholder="name@thomsonreuters.com"></div>
-    <div class="frow"><label>What do they owe you? *</label><input id="m-desc" placeholder="e.g. API spec document"></div>
-    <div class="frow"><label>Due date</label><input type="date" id="m-due"></div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn pri" onclick="saveOwed()">Save</button>
-    </div>`;
-
-  else if(type==='add-owed-item') box.innerHTML=`
-    <h2>Add item for ${esc(data.pname)}</h2>
-    <div class="frow"><label>Description *</label><input id="m-desc" placeholder="What do they owe you?" autofocus></div>
-    <div class="frow"><label>Due date</label><input type="date" id="m-due"></div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn pri" onclick="saveOwedItem('${data.oid}')">Save</button>
-    </div>`;
-
-  else if(type==='settings') box.innerHTML=`
-    <h2>⚙ Microsoft 365 Settings</h2>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.6">
-      Enter your Azure App details to enable sync and Teams notifications.
-      Uses browser-based auth (PKCE) — no client secret needed.
-    </p>
-    <div class="frow"><label>Azure Application (Client) ID *</label><input id="m-cid" value="${cfg.clientId||''}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autofocus></div>
-    <div class="frow"><label>Tenant ID (pre-filled for Thomson Reuters)</label><input id="m-tid" value="${cfg.tenantId||'62ccb864-6a1a-4b5d-8e1c-397dec1a8258'}"></div>
-    <div style="background:var(--blue-bg);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--blue)">
-      <strong>How to get your Client ID:</strong><br>
-      1. Go to portal.azure.com → Azure Active Directory → App Registrations<br>
-      2. Find your "PM Task Tracker" app (or create new one)<br>
-      3. Set platform to <strong>Single-page application (SPA)</strong><br>
-      4. Set Redirect URI to <strong>${window.location.origin}</strong><br>
-      5. Copy the Application (Client) ID
-    </div>
-    ${account?`<p style="font-size:13px;color:var(--text2);margin-bottom:8px">Signed in as: <strong>${account.name||account.username}</strong></p>
-    <button class="btn red sm" onclick="signOut()" style="margin-bottom:12px">Sign out</button>`:''}
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn pri" onclick="saveSettings()">Save & connect</button>
-    </div>`;
-};
-
-window.closeModal=()=>{ document.getElementById('modal-bg').style.display='none'; };
-window.switchTab=(name,el)=>{
-  ['tasks','owed','sync'].forEach(t=>document.getElementById('tab-'+t).style.display=t===name?'block':'none');
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
-  if(name==='sync') renderSyncLogs();
-};
-
-window.saveTask=()=>{
-  const title=document.getElementById('m-title').value.trim();
+function saveTask(){
+  var title=document.getElementById('mt').value.trim();
   if(!title) return;
-  tasks.unshift({id:uid(),title,status:document.getElementById('m-status').value,
-    source:document.getElementById('m-src').value,due_date:document.getElementById('m-due').value||'',
-    ref:document.getElementById('m-ref').value.trim(),createdAt:TODAY()});
-  save(); render(); renderMetrics(); closeModal();
-};
-
-window.saveOwed=()=>{
-  const p=document.getElementById('m-person').value.trim();
-  const d=document.getElementById('m-desc').value.trim();
+  tasks.unshift({id:uid(),title:title,status:document.getElementById('ms').value,
+    source:document.getElementById('mr').value,due_date:document.getElementById('md').value||'',
+    ref:document.getElementById('mf').value.trim(),createdAt:TODAY()});
+  lsSave();renderTasks();renderMetrics();closeModal();
+}
+function saveOwed(){
+  var p=document.getElementById('mp').value.trim(), d=document.getElementById('md2').value.trim();
   if(!p||!d) return;
-  owed.push({id:uid(),person:p,email:document.getElementById('m-email').value.trim(),
-    items:[{id:uid(),desc:d,due:document.getElementById('m-due').value||''}]});
-  save(); renderOwed(); renderMetrics(); closeModal();
-};
-
-window.saveOwedItem=(oid)=>{
-  const d=document.getElementById('m-desc').value.trim();
+  owed.push({id:uid(),person:p,email:document.getElementById('me2').value.trim(),
+    items:[{id:uid(),desc:d,due:document.getElementById('mdd').value||''}]});
+  lsSave();renderOwed();renderMetrics();closeModal();
+}
+function saveOItem(oid){
+  var d=document.getElementById('oid').value.trim();
   if(!d) return;
-  const o=owed.find(x=>x.id===oid);
-  if(o){o.items.push({id:uid(),desc:d,due:document.getElementById('m-due').value||''}); save(); renderOwed(); closeModal();}
-};
-
-window.saveSettings=async()=>{
-  cfg.clientId=document.getElementById('m-cid').value.trim();
-  cfg.tenantId=document.getElementById('m-tid').value.trim()||'62ccb864-6a1a-4b5d-8e1c-397dec1a8258';
-  save(); closeModal();
-  msalApp=null; account=null; accessToken=null;
-  await initMsal();
-  if(cfg.clientId) toast('Settings saved — click Sign in to connect M365','success');
-};
-
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var o=owed.find(function(x){return x.id===oid;});
+  if(o){o.items.push({id:uid(),desc:d,due:document.getElementById('odd').value||''});lsSave();renderOwed();closeModal();}
+}
+function saveSettings(){
+  cfg.clientId = document.getElementById('cid').value.trim();
+  cfg.tenantId = document.getElementById('tid').value.trim()||'62ccb864-6a1a-4b5d-8e1c-397dec1a8258';
+  lsSave(); closeModal();
+  msalApp=null; account=null;
+  initMsal();
+  if(cfg.clientId) toast('Settings saved! Click Sync M365 to sign in','ok');
+}
 
 // ── Auto-sync every 30 min ─────────────────────────────────────────────────
-setInterval(()=>{ if(account) syncM365(true); }, 30*60*1000);
+setInterval(function(){ if(account) syncM365(true); }, 30*60*1000);
 
 // ── Boot ───────────────────────────────────────────────────────────────────
-await initMsal();
+renderAll();
+updateUI();
+initMsal();
 </script>
 </body>
 </html>
