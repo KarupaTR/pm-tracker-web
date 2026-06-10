@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PM Task Tracker</title>
 <!-- MSAL UMD build — no ES module, works in all browsers -->
-<script src="https://alcdn.msauth.net/browser/3.26.1/js/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.26.1/dist/msal-browser.min.js" onerror="msalLoadFailed()"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#fff;--bg2:#f5f5f4;--bg3:#efefed;--tx:#1a1a18;--tx2:#6b6b67;--bd:rgba(0,0,0,.1);--bd2:rgba(0,0,0,.18);--r:8px;--rl:12px}
@@ -192,42 +192,71 @@ var SCOPES = [
   'https://graph.microsoft.com/User.ReadBasic.All'
 ];
 
+function msalLoadFailed(){
+  console.error('MSAL CDN failed to load');
+  toast('MSAL library blocked — trying fallback CDN...','err');
+  var s=document.createElement('script');
+  s.src='https://unpkg.com/@azure/msal-browser@3.26.1/dist/msal-browser.min.js';
+  s.onload=function(){ if(cfg.clientId) initMsal(); };
+  s.onerror=function(){ toast('All CDNs blocked. Try opening the app outside TR network or VPN.','err'); };
+  document.head.appendChild(s);
+}
+
 function initMsal(){
   if(!cfg.clientId){ updateUI(); return; }
+  if(typeof msal === 'undefined'){
+    toast('MSAL library not loaded yet — retrying in 2s...','info');
+    setTimeout(initMsal, 2000);
+    return;
+  }
   try{
     msalApp = new msal.PublicClientApplication({
-      auth:{ clientId:cfg.clientId, authority:'https://login.microsoftonline.com/'+cfg.tenantId, redirectUri:window.location.origin },
+      auth:{
+        clientId: cfg.clientId,
+        authority: 'https://login.microsoftonline.com/'+cfg.tenantId,
+        redirectUri: window.location.origin
+      },
       cache:{ cacheLocation:'localStorage', storeAuthStateInCookie:false }
     });
     msalApp.initialize().then(function(){
-      // Popup flow — no redirect to handle
       var accounts = msalApp.getAllAccounts();
       if(accounts.length > 0){
         account = accounts[0];
-        toast('Welcome back, '+account.name,'ok');
+        toast('Welcome back, '+account.name+' ✓','ok');
       }
       updateUI();
       if(account){ setTimeout(function(){ syncM365(true); }, 1500); }
     }).catch(function(e){
       console.error('MSAL init error:', e);
-      toast('MSAL init error: '+e.message,'err');
+      toast('Auth init failed: '+e.message,'err');
       updateUI();
     });
-  } catch(e){ console.error('MSAL create error:', e); updateUI(); }
+  } catch(e){
+    console.error('MSAL create error:', e);
+    toast('Auth setup failed: '+e.message,'err');
+    updateUI();
+  }
 }
 
 function signIn(){
   if(!cfg.clientId){ openModal('settings'); toast('Enter your Azure Client ID in Settings first','err'); return; }
-  if(!msalApp){ toast('MSAL not ready — check Client ID in Settings','err'); return; }
-  toast('Opening sign-in window...','info');
-  msalApp.loginPopup({scopes:SCOPES}).then(function(result){
+  if(typeof msal === 'undefined'){ toast('Auth library still loading — please wait a moment and try again','err'); return; }
+  if(!msalApp){ initMsal(); toast('Initializing auth — click Sign in again in 3 seconds','info'); return; }
+  toast('Opening Microsoft sign-in popup...','info');
+  msalApp.loginPopup({scopes:SCOPES, prompt:'select_account'}).then(function(result){
     account = result.account;
     toast('Signed in as '+account.name+' ✓','ok');
     updateUI();
     setTimeout(function(){ syncM365(true); }, 1000);
   }).catch(function(e){
-    if(e.errorCode === 'user_cancelled') { toast('Sign-in cancelled','info'); return; }
-    toast('Sign-in failed: '+e.message,'err');
+    if(e.errorCode === 'user_cancelled' || (e.message&&e.message.includes('cancelled'))) {
+      toast('Sign-in cancelled','info'); return;
+    }
+    if(e.message&&e.message.toLowerCase().includes('popup')){
+      toast('Popup blocked! Allow popups for this site in your browser settings, then try again.','err');
+      return;
+    }
+    toast('Sign-in error: '+e.message,'err');
     console.error('MSAL loginPopup error:', e);
   });
 }
