@@ -1,6 +1,98 @@
 {
-  "synced_at": "",
-  "tasks": [],
-  "owedItems": [],
-  "version": 1
+  "synced_at": "2026-06-10T18:28:18.684466Z",
+  "version": 1,
+  "tasks": [
+    {
+      "title": "Review and action User Story 5346834 \u2014 1041 CCH ScanVerify: Allow users to fix and resubmit binders with correctable errors via FileRoom (CCH API V7)",
+      "status": "new",
+      "source": "outlook",
+      "dueDate": "2026-06-12",
+      "ref": "ADO: Assigned to you by Azure DevOps"
+    },
+    {
+      "title": "Review and action User Story 5346822 \u2014 1041 specific fields behaviour: Account No., Trust name, Trust EIN, Trust type, home state",
+      "status": "new",
+      "source": "outlook",
+      "dueDate": "2026-06-12",
+      "ref": "ADO: Assigned to you by Azure DevOps"
+    },
+    {
+      "title": "Review and action User Story 5298250 \u2014 Manual export via FileRoom/TaxCaddy/GFR on completion of all review steps (Original Submission)",
+      "status": "new",
+      "source": "outlook",
+      "dueDate": "2026-06-13",
+      "ref": "ADO: Assigned to you by Azure DevOps"
+    },
+    {
+      "title": "Review FW: CCH Axcess MFA Changes and assess impact on SurePrep integration",
+      "status": "new",
+      "source": "outlook",
+      "dueDate": "2026-06-11",
+      "ref": "Email from Swapna Thatikonda (high importance)"
+    },
+    {
+      "title": "Add backlog item: Show specific fields (Account No., Trust name, Trust EIN, Trust type, home state) in the Create Binder call",
+      "status": "new",
+      "source": "outlook",
+      "dueDate": "2026-06-13",
+      "ref": "Email thread: SurePrep renewal & tax season review \u2014 Swapna asked for this"
+    },
+    {
+      "title": "Respond to SharePoint access request from Konjeti Venkata Himavani for UltraTax CS Changes at SurePrep for TY 2025_Final",
+      "status": "new",
+      "source": "outlook",
+      "dueDate": "2026-06-11",
+      "ref": "SharePoint sharing request from Himavani (TR Technology)"
+    },
+    {
+      "title": "Review SurePrep_API_Submissions_Threshold_Limit_PRD_Updated shared by Swapna",
+      "status": "new",
+      "source": "outlook",
+      "dueDate": "2026-06-13",
+      "ref": "Document shared by Swapna Thatikonda via SharePoint"
+    },
+    {
+      "title": "Attend API connect on new workflows meeting (Danish Javed)",
+      "status": "new",
+      "source": "teams",
+      "dueDate": "2026-06-11",
+      "ref": "Teams meeting invite from Danish.Javed@thomsonreuters.com"
+    },
+    {
+      "title": "Attend Tax Automation (ADGE) Weekly Program Checkpoint \u2014 review RAID log updates",
+      "status": "new",
+      "source": "outlook",
+      "dueDate": "2026-06-11",
+      "ref": "Email from NeelaRamaJyothi.Isampalli@thomsonreuters.com"
+    },
+    {
+      "title": "Discuss pending API stories \u2014 attend meeting with Swapna",
+      "status": "new",
+      "source": "outlook",
+      "dueDate": "2026-06-11",
+      "ref": "Accepted: Discussion on Pending API Stories \u2014 Swapna Thatikonda"
+    }
+  ],
+  "owedItems": [
+    {
+      "person": "Jessica Ockerman",
+      "email": "jessica.ockerman@thomsonreuters.com",
+      "items": [
+        {
+          "desc": "Update on Gather First Look delivery milestone clearance (needed to plan development work)",
+          "due": "2026-06-15"
+        }
+      ]
+    },
+    {
+      "person": "Danish Javed",
+      "email": "Danish.Javed@thomsonreuters.com",
+      "items": [
+        {
+          "desc": "API connect on new workflows \u2014 meeting details and agenda",
+          "due": "2026-06-11"
+        }
+      ]
+    }
+  ]
 }
