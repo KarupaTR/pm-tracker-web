@@ -149,7 +149,8 @@ h1{font-size:20px;font-weight:600}
     </div>
     <div class="acts">
       <span id="spin-wrap" style="display:none;font-size:12px;color:var(--tx2)"><span class="spin"></span>Syncing…</span>
-      <button class="btn blue" id="sync-btn" onclick="onSyncClick()">↻ Sync M365</button>
+      <button class="btn blue" id="claude-sync-btn" onclick="claudeSync()">↻ Claude Sync</button>
+      <button class="btn" id="sync-btn" style="display:none" onclick="onSyncClick()">↻ Sync M365</button>
       <button class="btn amber" onclick="notifyDue()">🔔 Notify due</button>
       <button class="btn" onclick="openModal('task')">+ Add task</button>
       <button class="btn sm" onclick="openModal('settings')" title="Settings">⚙</button>
@@ -605,7 +606,7 @@ function updateUI(){
     info.textContent=(account.name||account.username)+' \u00b7 Auto-sync every 30 min';
     banner.style.display='none'; btn.textContent='↻ Sync M365';
   } else {
-    info.textContent='Click Sync M365 to sign in';
+    info.textContent='Click ↻ Claude Sync to load your tasks';
     banner.style.display=''; btn.textContent='Sign in to M365';
   }
 }
@@ -732,7 +733,54 @@ function saveSettings(){
   initMsal();
 }
 
-// ── Auto-sync every 30 min ─────────────────────────────────────────────────
+
+// ── Claude Sync (via GitHub data bridge) ──────────────────────────────────
+var SYNC_URL = 'https://raw.githubusercontent.com/KarupaTR/pm-tracker-web/main/sync-data.json';
+var lastSyncAt = '';
+
+function claudeSync(){
+  var btn=document.getElementById('claude-sync-btn');
+  if(btn){btn.disabled=true;btn.textContent='Loading...';}
+  fetch(SYNC_URL+'?t='+Date.now())
+  .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(function(data){
+    if(!data.synced_at){
+      toast('No sync yet — ask Claude: "sync my M365 tasks"','info');
+      return;
+    }
+    if(data.synced_at===lastSyncAt){toast('Already up to date \u2713','info');return;}
+    lastSyncAt=data.synced_at;
+    var added=0;
+    (data.tasks||[]).forEach(function(t){
+      if(!tasks.some(function(x){return x.title.toLowerCase()===t.title.toLowerCase();})){
+        tasks.unshift({id:uid(),title:t.title,status:t.status||'new',
+          source:t.source||'outlook',due_date:t.dueDate||t.due_date||'',
+          ref:t.ref||'',createdAt:TODAY()});
+        added++;
+      }
+    });
+    (data.owedItems||[]).forEach(function(o){
+      if(!o.person)return;
+      var ex=owed.find(function(x){return x.person.toLowerCase()===o.person.toLowerCase();});
+      if(ex){(o.items||[]).forEach(function(i){ex.items.push({id:uid(),desc:i.desc||i.description||'',due:i.due||i.dueDate||''});});}
+      else{owed.push({id:uid(),person:o.person,email:o.email||'',
+        items:(o.items||[]).map(function(i){return {id:uid(),desc:i.desc||i.description||'',due:i.due||i.dueDate||''};})});}
+    });
+    lsSave();renderAll();
+    var when=new Date(data.synced_at).toLocaleTimeString();
+    toast(added+' task'+(added!==1?'s':'')+' loaded \u2713  (synced '+when+')',added>0?'ok':'info');
+    logs.unshift({time:new Date().toLocaleString(),ok:true,msg:'Claude sync: +'+added+' tasks'});
+    if(logs.length>20)logs=logs.slice(0,20);
+    lsSave();renderSyncLog();
+  }).catch(function(e){toast('Fetch error: '+e.message,'err');})
+  .finally(function(){if(btn){btn.disabled=false;btn.textContent='\u21bb Claude Sync';}});
+}
+
+// Auto-check every 5 min + on load
+setTimeout(function(){claudeSync();},2000);
+setInterval(function(){claudeSync();},5*60*1000);
+
+// ── M365 direct auto-sync ─────────────────────────────────────────────────
 setInterval(function(){ if(account) syncM365(true); }, 30*60*1000);
 
 // ── Boot ───────────────────────────────────────────────────────────────────
